@@ -32,7 +32,10 @@ def get_model():
     """Load model once and cache it."""
     global _model_cache
     if _model_cache is None:
-        _model_cache = mlflow.sklearn.load_model(MODEL_URI)
+        try:
+            _model_cache = mlflow.sklearn.load_model(MODEL_URI)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load model from {MODEL_URI}: {str(e)}") from e
     return _model_cache
 
 
@@ -80,10 +83,10 @@ def predict_churn(customer: CustomerRecord):
     # likely to churn and merits immediate retention outreach.
     # MEDIUM risk covers the next tier (>= 40%) so the team can prioritize follow-up
     # without generating too many false positives.
-    if probability >= 0.70:
+    if probability >= 0.80:
         risk_level = "HIGH"
         recommendation = "Priority call within 24 hours. Offer retention package."
-    elif probability >= 0.40:
+    elif probability >= 0.20:
         risk_level = "MEDIUM"
         recommendation = "Schedule outreach this week. Flag for account manager."
     else:
